@@ -1,6 +1,7 @@
 from nltk.util import ngrams
 import faerie
 import gc
+import json
 
 n = 2 # ngram num 
 threshold = 0.8 # threshold
@@ -22,6 +23,7 @@ for line in open('testentity.csv'):
 	# build inverted lists for tokens
 	tokens = list(set(tokens))
 	for token in tokens:
+		token = str(token)
 		try:
 			inverted_list[token].append(i)
 			inverted_list_len[token] += 1
@@ -30,20 +32,22 @@ for line in open('testentity.csv'):
 			inverted_list[token].append(i)	
 			inverted_list_len[token] = 1	
 	i = i + 1	
-
+result = {}
 for line in open('ht-sample-locations.csv'):
 	#tokenize document, add inverted list(empty) of new tokens in document
 	document = line.split('\t')[1].replace(', ','_').replace(' ','_').lower().strip()
 	tokens = list(ngrams(document, n))
 	heap = []
+	keys = []
 	los = len(tokens)
 	# build the heap
-	for i in range(los):
+	for i, token in enumerate(tokens):
+		key = str(token)
+		keys.append(key)
 		try:
-			heap.append([inverted_list[tokens[i]][0],i])
+			heap.append([inverted_list[key][0],i])
 		except KeyError:
 			pass
 	if heap != []:
-		print (document)
-		faerie.getcandidates(heap,entity_tokennum,inverted_list_len,inverted_index,inverted_list,tokens,los,maxenl)
-		# print inverted_index[0]
+		result[document] = faerie.getcandidates(heap,entity_tokennum,inverted_list_len,inverted_index,inverted_list,keys,los,maxenl)
+print result
