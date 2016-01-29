@@ -2,13 +2,18 @@
 #include <stdlib.h>
 
 typedef struct node{
-    long entity;
-    long position;
+    int entity;
+    int position;
 } Node;
 
+int comp(const void*a,const void*b)
+{
+    return *(int*)a-*(int*)b;
+}
+
 //rebalance the heap
-static void down(Node *heap,long len, long i){
-    long min;
+static void down(Node *heap,int len, int i){
+    int min;
     while(i*2<=len){
         if(i*2+1 > len)
             min = i * 2;
@@ -27,25 +32,25 @@ static void down(Node *heap,long len, long i){
     }
 }
 //turn a list to a min heap
-static void heapify(long len,Node *heap){
-    long i = len/2+1;
+static void heapify(int len,Node *heap){
+    int i = len/2+1;
     while(i>0){
         down(heap,len,i);
         i--;
     }
 }
 //replace the top entity with [i,j]
-static void replace(Node *heap,long len, long e,long p){
+static void replace(Node *heap,int len, int e,int p){
     heap[0].entity = e;
     heap[0].position = p;
     down(heap,len,1);
 }
 
-static long BinaryShift(long i, long j, long upe,long Tl,long *Pe,long psize){
-    long lower = i;
-    long upper = j;
+static int BinaryShift(int i, int j, int upe,int Tl,int *Pe,int psize){
+    int lower = i;
+    int upper = j;
     while(lower<=upper){
-        long mid = floor((upper+lower)/2);
+        int mid = floor((upper+lower)/2);
         if((Pe[j] + mid - i - Pe[mid] + 1) >upe)
             lower = mid + 1;
         else
@@ -62,31 +67,34 @@ static long BinaryShift(long i, long j, long upe,long Tl,long *Pe,long psize){
         return i;
 }
 
-static PyObject* PyDicListGetItem(PyObject *list, PyObject *dict,long i){
+static PyObject* PyDicListGetItem(PyObject *list, PyObject *dict,int i){
+    fflush(stdout);
     if (list == Py_None || list == NULL)
         printf("%s\n","dll NULL" );
     if (dict == Py_None || dict == NULL)
         printf("%s\n","dld NULL" );
-    if (PyList_GetItem(list,i) == NULL){
+    
+    PyObject *listitem = NULL;
+    listitem = PyList_GetItem(list,i);
+    if (listitem == NULL || listitem == Py_None){
         printf("%d,%d\n",i, PyList_GET_SIZE(list));
         printf("%s\n","cannot get list item" );
         return NULL;
     }
-    PyObject *listitem = NULL;
-    listitem = PyList_GetItem(list,i);
-    if (PyDict_GetItem(dict,listitem) == NULL){
-        printf("%s\n","cannot get dictionary item" );
-        return NULL;
-    }
+    // printf("%s%s\n","12345",PyString_AsString(listitem) );fflush(stdout);
     if(PyDict_Contains(dict,listitem) != 1){
-        printf("%s\n","key not found" );
+        printf("%s\n","key not found" );fflush(stdout);
+    }
+    if (PyDict_GetItem(dict,listitem) == NULL){
+        printf("%s %d\n","cannot get dictionary item",PyString_Check(listitem) );
+        return NULL;
     }
     PyObject *dictitem = NULL;
     dictitem = PyDict_GetItem(dict,listitem);
     return dictitem;
 }
 
-static PyObject* PyLiListGetItem(PyObject *list, long i,long j){
+static PyObject* PyLiListGetItem(PyObject *list, int i,int j){
     if (list == Py_None)
         printf("%s\n","lili NULL" );
     if (PyList_GetItem(list,i) == NULL){
@@ -105,15 +113,22 @@ static PyObject* PyLiListGetItem(PyObject *list, long i,long j){
     return list2item;
 }
 
-static long pyGetint(PyObject *ob){
-    if (ob == Py_None)
+static int pyGetint(PyObject *ob){
+    Py_INCREF(ob);
+    if (ob == Py_None || ob == NULL){
         printf("%s\n","int NULL" );
+        Py_DECREF(ob);
+        return NULL;
+    }
+    // printf("here we are! %d\n", ob);fflush(stdout);
     if (PyInt_Check(ob)){
-        long i = PyInt_AsLong(ob);
+        int i = PyInt_AsLong(ob);
+        Py_DECREF(ob);
         return i;
     }
     else{
         printf("%s\n","pyint_error" );
+        Py_DECREF(ob);
         return NULL;
     }
 }
@@ -128,18 +143,18 @@ he_getcandidates(PyObject *self, PyObject *args)
     PyObject *inindex = NULL;
     PyObject *inlist = NULL;
     PyObject *tokens = NULL;
+    PyObject *result = PyList_New(0);
     //len: length of heap; loe: length of entity; los: length of document tokens; e: top entity in heap; [ei,pi]:next entity after poping e; psize: position array size.
     int len,loe,los,e,ei,pi,psize,i,j,l,maxentitylen;
     //unified threshold
     float T;
     float threshold = 0.8;
-    // PyObject *result = PyList_New(0);
     if (!PyArg_ParseTuple(args, "OOOOOOii", &list,&entity_len,&inlist_len,&inindex,&inlist,&tokens,&los,&maxentitylen))
         return NULL;
     //current_index: this shows the current entity index in inverted list.
     int *current_index= PyMem_New(int,los);
     //Pe: position list
-    int *Pe = PyMem_New(int,los);
+    int *Pe = PyMem_New(int,0);
     for(i=0;i<los;i++){
         current_index[i] = 0;
     }
@@ -147,9 +162,9 @@ he_getcandidates(PyObject *self, PyObject *args)
     Node *heap = PyMem_New(Node,len);
     for(i=0;i<len;i++){
         PyObject *entity = PyLiListGetItem(list,i,0);
-        long e = pyGetint(entity);
+        int e = pyGetint(entity);
         PyObject *position = PyLiListGetItem(list,i,1);
-        long p = pyGetint(position);
+        int p = pyGetint(position);
         heap[i].entity = e;
         heap[i].position = p;
     }
@@ -175,6 +190,7 @@ he_getcandidates(PyObject *self, PyObject *args)
         ei = heap[0].entity;
         pi = heap[0].position;
         // printf("%d,%d\n",ei,pi );
+        // printf("%d,%d\n",ei,pi );
         if(ei == 237392 || pi == -1){
             for (i=0;i<los;i++){
                 PyMem_Del(occur[i]); 
@@ -192,20 +208,9 @@ he_getcandidates(PyObject *self, PyObject *args)
         }
         if(ei == e){
             //insert the position i and sort the list Pe.
-            if(psize == 0){
-                Pe[psize] = pi;
-            }
-            else if(pi<Pe[psize-1]){
-                i = psize-1;
-                //Pe[psize] = Pe[psize-1];
-                while(pi<Pe[i]){
-                    Pe[i+1] = Pe[i];
-                    i--;
-                }
-                Pe[i+1] = pi;
-            }else
-                Pe[psize] = pi;
             psize++;
+            Pe = PyMem_Resize(Pe,int,psize);
+            Pe[psize-1] = pi;
             int k;
             for(l=0;l<=upe-lowe;l++){
                 if(pi-l-lowe+1>=0)
@@ -217,6 +222,7 @@ he_getcandidates(PyObject *self, PyObject *args)
             }
         }
         else{
+            qsort(Pe,psize,sizeof(int),comp);
             if(psize>=lowe){
                 i = 0;
                 while(i<=psize-lowe){
@@ -238,7 +244,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                             if(lowe<=slen && slen<=upe){
                                 T = ceil((loe+los)*(threshold/(1+threshold)));
                                 if (occur[Pe[i]][slen-lowe] >= T){
-                                    // PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
+                                    PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
                                 }                                                               
                             }
                             break;
@@ -247,7 +253,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                         if(lowe<=slen && slen<=upe){
                             T = ceil((loe+los)*(threshold/(1+threshold)));
                             if (occur[Pe[i]][slen-lowe] >= T){
-                                // PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
+                                PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
                             }
                         }
                         i++;
@@ -264,6 +270,8 @@ he_getcandidates(PyObject *self, PyObject *args)
             lowe = ceil(loe*threshold);
             upe = floor(loe/threshold);            
             psize = 0;
+            PyMem_Del(Pe);
+            Pe = PyMem_New(int,1);
             Pe[psize] = pi;
             psize++;
             for(j=0;j<los;j++){
@@ -277,17 +285,26 @@ he_getcandidates(PyObject *self, PyObject *args)
             if(pi>=los)
                 printf("%s\n","out of range" );
             PyObject *invertedlistpi = PyDicListGetItem(tokens,inlist,pi);
+            if(current_index[pi] >= PyList_GET_SIZE(invertedlistpi))
+                    printf("%s\n","out of range for invertedlistpi" );
             PyObject *nextentity = PyList_GetItem(invertedlistpi,current_index[pi]);
             if(nextentity == NULL || nextentity == Py_None)
                 printf("%s\n","wrong int" );
+            // printf("%d %d\n",nextentity, PyList_GET_SIZE(invertedlistpi) );
+            // for (i = 0;i<PyList_GET_SIZE(invertedlistpi);i++){
+            //     printf("%d\n",i );
+            //     printf("%d,",PyInt_Check(PyList_GetItem(invertedlistpi,i)) );
+            // }
+            // printf("\n");
+            // printf("%s,%d,%d\n","re",pyGetint(nextentity),pi );
             replace(heap,len,pyGetint(nextentity),pi);
         }
         else{
             replace(heap,len,237392,-1);
         }
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_INCREF(result);
+    return result;
 }
  
 static PyMethodDef faerie_methods[] = {
