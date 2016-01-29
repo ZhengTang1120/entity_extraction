@@ -270,8 +270,7 @@ he_getcandidates(PyObject *self, PyObject *args)
             lowe = ceil(loe*threshold);
             upe = floor(loe/threshold);            
             psize = 0;
-            PyMem_Del(Pe);
-            Pe = PyMem_New(int,1);
+            Pe = PyMem_Resize(Pe,int,1);
             Pe[psize] = pi;
             psize++;
             for(j=0;j<los;j++){
@@ -290,13 +289,6 @@ he_getcandidates(PyObject *self, PyObject *args)
             PyObject *nextentity = PyList_GetItem(invertedlistpi,current_index[pi]);
             if(nextentity == NULL || nextentity == Py_None)
                 printf("%s\n","wrong int" );
-            // printf("%d %d\n",nextentity, PyList_GET_SIZE(invertedlistpi) );
-            // for (i = 0;i<PyList_GET_SIZE(invertedlistpi);i++){
-            //     printf("%d\n",i );
-            //     printf("%d,",PyInt_Check(PyList_GetItem(invertedlistpi,i)) );
-            // }
-            // printf("\n");
-            // printf("%s,%d,%d\n","re",pyGetint(nextentity),pi );
             replace(heap,len,pyGetint(nextentity),pi);
         }
         else{
