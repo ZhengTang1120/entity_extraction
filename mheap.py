@@ -1,19 +1,29 @@
 from nltk.util import ngrams
 import faerie
-import gc
 import json
+import sys
 
-n = 2 # ngram num 
-threshold = 0.8 # threshold
+if len(sys.argv) < 3:
+	print "Error: No Enough Inputs"
+	sys.exit()
+dictfile = sys.argv[1]
+inputfile = sys.argv[2]
+
+n = 2 # default ngram num 
+threshold = 0.8 # default threshold	
 
 inverted_list = {}
 inverted_index = []
 entity_tokennum = {}
 inverted_list_len = {}
+entity_realid = {}
+entity_real = {}
 i = 0
 maxenl = 0
-for line in open('testentity.csv'):
+for line in open(dictfile):
+	entity_realid[i] = line.split("\t")[0]
 	line = line.split('\t')[1]+'_'+line.split('\t')[2]
+	entity_real[i] = line.strip()
 	entity = line.replace(' ','_').replace(',','').lower().strip()
 	inverted_index.append(entity) # record each entity and its id
 	tokens = list(ngrams(entity, n))
@@ -31,11 +41,16 @@ for line in open('testentity.csv'):
 			inverted_list[token] = []
 			inverted_list[token].append(i)	
 			inverted_list_len[token] = 1	
-	i = i + 1	
-result = {}
-for line in open('ht-sample-locations.csv'):
+	i = i + 1
+
+for line in open(inputfile):
 	#tokenize document, add inverted list(empty) of new tokens in document
 	document = line.split('\t')[1].replace(', ','_').replace(' ','_').lower().strip()
+	jsonline = {}
+	jsonline["document"] = {}
+	jsonline["document"]["id"] = line.split('\t')[0]
+	jsonline["document"]["value"] = line.split('\t')[1].strip()
+	jsonline["entities"] = {}
 	tokens = list(ngrams(document, n))
 	heap = []
 	keys = []
@@ -49,5 +64,16 @@ for line in open('ht-sample-locations.csv'):
 		except KeyError:
 			pass
 	if heap != []:
-		result[document] = faerie.getcandidates(heap,entity_tokennum,inverted_list_len,inverted_index,inverted_list,keys,los,maxenl)
-print result
+		returnValuesFromC = faerie.getcandidates(heap,entity_tokennum,inverted_list_len,inverted_index,inverted_list,keys,los,maxenl)
+		for value in returnValuesFromC:
+			temp = {}
+			temp["start"] = value[1]
+			temp["end"] = value[2]
+			temp["score"] = value[3]
+			try:
+				jsonline["entities"][entity_realid[value[0]]]["candwins"].append(temp)
+			except KeyError:
+				jsonline["entities"][entity_realid[value[0]]] = {}
+				jsonline["entities"][entity_realid[value[0]]]["value"] = entity_real[value[0]]
+				jsonline["entities"][entity_realid[value[0]]]["candwins"] = [temp]
+	print json.dumps(jsonline)

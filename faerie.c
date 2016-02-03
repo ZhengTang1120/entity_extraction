@@ -244,7 +244,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                             if(lowe<=slen && slen<=upe){
                                 T = ceil((loe+los)*(threshold/(1+threshold)));
                                 if (occur[Pe[i]][slen-lowe] >= T){
-                                    PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
+                                    PyList_Append(result,Py_BuildValue("[i,i,i,i]", e, Pe[i],Pe[upper],occur[Pe[i]][slen-lowe])); 
                                 }                                                               
                             }
                             break;
@@ -253,7 +253,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                         if(lowe<=slen && slen<=upe){
                             T = ceil((loe+los)*(threshold/(1+threshold)));
                             if (occur[Pe[i]][slen-lowe] >= T){
-                                PyList_Append(result,Py_BuildValue("[i,i,i]", e, Pe[i],Pe[upper])); 
+                                PyList_Append(result,Py_BuildValue("[i,i,i,i]", e, Pe[i],Pe[upper],occur[Pe[i]][slen-lowe])); 
                             }
                         }
                         i++;
