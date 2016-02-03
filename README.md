@@ -9,4 +9,5 @@ Run "python mheap.py <dictionary file> <documents file>", run the extraction
 You can check the dictionary format and document format by looking at sample input.
 
 Current output is a json line:
+
 {"entities": {entity id: {"value": entity value, "candwins": [{"start": #, "score": #, "end": #}]}}, "document": {"id": document id, "value": document value}}
