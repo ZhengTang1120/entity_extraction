@@ -1,5 +1,7 @@
 #include "Python.h"
 #include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
 
 typedef struct node{
     int entity;
@@ -147,7 +149,6 @@ he_getcandidates(PyObject *self, PyObject *args)
     //len: length of heap; loe: length of entity; los: length of document tokens; e: top entity in heap; [ei,pi]:next entity after poping e; psize: position array size.
     int len,loe,los,e,ei,pi,psize,i,j,l,maxentitylen;
     //unified threshold
-    float T;
     float threshold = 0.8;
     if (!PyArg_ParseTuple(args, "OOOOOOii", &list,&entity_len,&inlist_len,&inindex,&inlist,&tokens,&los,&maxentitylen))
         return NULL;
@@ -189,23 +190,6 @@ he_getcandidates(PyObject *self, PyObject *args)
     while(1){
         ei = heap[0].entity;
         pi = heap[0].position;
-        // printf("%d,%d\n",ei,pi );
-        // printf("%d,%d\n",ei,pi );
-        if(ei == 237392 || pi == -1){
-            for (i=0;i<los;i++){
-                PyMem_Del(occur[i]); 
-                occur[i] = NULL;   
-            }         
-            PyMem_Del(occur);
-            occur = NULL;
-            PyMem_Del(Pe);
-            Pe = NULL;
-            PyMem_Del(current_index);
-            current_index = NULL;
-            PyMem_Del(heap);
-            heap = NULL;
-            break;
-        }
         if(ei == e){
             //insert the position i and sort the list Pe.
             psize++;
@@ -242,7 +226,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                             upper = psize-1;
                             int slen = Pe[upper] - Pe[i] + 1;
                             if(lowe<=slen && slen<=upe){
-                                T = ceil((loe+los)*(threshold/(1+threshold)));
+                                int T = (loe+slen)*(threshold/(1+threshold));
                                 if (occur[Pe[i]][slen-lowe] >= T){
                                     PyList_Append(result,Py_BuildValue("[i,i,i,i]", e, Pe[i],Pe[upper],occur[Pe[i]][slen-lowe])); 
                                 }                                                               
@@ -251,7 +235,7 @@ he_getcandidates(PyObject *self, PyObject *args)
                         }
                         int slen = Pe[upper] - Pe[i] + 1;
                         if(lowe<=slen && slen<=upe){
-                            T = ceil((loe+los)*(threshold/(1+threshold)));
+                            int T = ceil((loe+slen)*(threshold/(1+threshold)));
                             if (occur[Pe[i]][slen-lowe] >= T){
                                 PyList_Append(result,Py_BuildValue("[i,i,i,i]", e, Pe[i],Pe[upper],occur[Pe[i]][slen-lowe])); 
                             }
@@ -263,6 +247,21 @@ he_getcandidates(PyObject *self, PyObject *args)
                             break;                        
                     }
                 }
+            }
+            if(ei == 237392 || pi == -1){
+                for (i=0;i<los;i++){
+                    PyMem_Del(occur[i]); 
+                    occur[i] = NULL;   
+                }         
+                PyMem_Del(occur);
+                occur = NULL;
+                PyMem_Del(Pe);
+                Pe = NULL;
+                PyMem_Del(current_index);
+                current_index = NULL;
+                PyMem_Del(heap);
+                heap = NULL;
+                break;
             }
             e = ei;
             PyObject *lenofen = PyDicListGetItem(inindex,entity_len,e);
