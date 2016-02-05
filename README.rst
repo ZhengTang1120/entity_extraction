@@ -14,9 +14,7 @@ you need to install nltk and its data:
 ::
 	sudo pip install -U nltk to install nltk
 
-2.run 
-::
-	python and type these commands:
+2.run python and type these commands:
 ::
 	>>> import nltk
 	>>> nltk.download()
