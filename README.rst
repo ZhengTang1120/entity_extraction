@@ -10,11 +10,16 @@ pre-request:
 
 you need to install nltk and its data:
 
-1.run sudo pip install -U nltk to install nltk
+1.run 
+::
+	sudo pip install -U nltk to install nltk
 
-2.run python and type these commands:
->>> import nltk
->>> nltk.download()
+2.run 
+::
+	python and type these commands:
+::
+	>>> import nltk
+	>>> nltk.download()
 
 3.run sudo pip install faerie
 
@@ -23,7 +28,10 @@ Usage:
 
 Input format is <id><\t><string> for both dictionary and documents
 
-run faerie.run(dictionary,documents,ngram(optional),threshold(optional)) to run the entity extraction. 
+run 
+::
+	faerie.run(dictionary,documents,ngram(optional),threshold(optional)) 
+to run the entity extraction. 
 
 Current output is a json line:
 -------------------------------------
