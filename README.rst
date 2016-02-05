@@ -19,7 +19,9 @@ you need to install nltk and its data:
 	>>> import nltk
 	>>> nltk.download()
 
-3.run sudo pip install faerie
+3.run 
+::
+	sudo pip install faerie
 
 Usage:
 --------------------
