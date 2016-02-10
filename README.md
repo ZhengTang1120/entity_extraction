@@ -23,7 +23,7 @@ faerie.run(dictionary,documents,config)
     "AdministrativeArea": "la salle county",
     "State": "texas",
     "Country": "united states"
-  }
+  },
   "uri": "http://dig.isi.edu/gazetteer/geonames/4046384",
 }
 ```
