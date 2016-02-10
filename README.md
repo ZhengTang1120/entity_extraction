@@ -19,11 +19,9 @@ faerie.run(dictionary,documents,config)
 ```json
 {
   "name": "Los Angeles",
-  "containedIn": {
-    "AdministrativeArea": "la salle county",
-    "State": "texas",
-    "Country": "united states"
-  },
+  "AdministrativeArea": "la salle county",
+  "State": "texas",
+  "Country": "united states",
   "uri": "http://dig.isi.edu/gazetteer/geonames/4046384",
 }
 ```
